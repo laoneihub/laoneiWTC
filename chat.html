@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>老内WTC · AI法律咨询</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+  .chat-container { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+  .chat-container::-webkit-scrollbar { width: 6px; }
+  .chat-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+  .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+  .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+  .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+  @keyframes typing {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+  }
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .source-tag { border-left: 3px solid #3b82f6; background: #eff6ff; padding: 0.5rem 0.75rem; border-radius: 0 6px 6px 0; margin: 0.5rem 0; font-size: 0.8rem; color: #1e40af; }
+</style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
+
+<!-- 顶部 -->
+<header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0">
+  <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-400 rounded-xl flex items-center justify-center text-white font-bold text-lg">W</div>
+  <div>
+    <h1 class="text-lg font-bold text-gray-900 leading-tight">老内WTC · AI法律咨询</h1>
+    <p class="text-xs text-gray-500">基于140个法规文件 · 零幻觉 · 来源可查</p>
+  </div>
+  <a href="index.html" class="ml-auto text-sm text-blue-600 hover:underline">← 知识库</a>
+</header>
+
+<!-- 对话区 -->
+<div id="chatBox" class="chat-container flex-1 overflow-y-auto px-4 py-4 space-y-4">
+  <!-- 欢迎消息 -->
+  <div class="flex gap-3">
+    <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">W</div>
+    <div class="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm max-w-[85%] text-gray-700 text-sm leading-relaxed">
+      <p>你好！我是老内WTC的法律助手，专门帮助外籍朋友解决在华法律问题。</p>
+      <p class="mt-2">我可以回答关于<strong>旅游维权、工作签证、创业设立、五星卡、婚姻家事、劳动争议</strong>等问题。所有回答都基于中国官方法规，来源可查。</p>
+      <p class="mt-2 text-gray-500">👇 点击下面常见问题，或直接输入你的问题：</p>
+    </div>
+  </div>
+</div>
+
+<!-- 快捷问题 -->
+<div id="quickQuestions" class="bg-white border-t border-gray-200 px-4 py-3 shrink-0">
+  <p class="text-xs text-gray-500 mb-2">常见问题：</p>
+  <div class="flex flex-wrap gap-2">
+    <button onclick="ask(0)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">旅游被强迫购物？</button>
+    <button onclick="ask(1)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">工作签证怎么申请？</button>
+    <button onclick="ask(2)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">五星卡需要什么条件？</button>
+    <button onclick="ask(3)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">创业开公司手续？</button>
+    <button onclick="ask(4)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">交通事故怎么办？</button>
+    <button onclick="ask(5)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">被欠薪怎么维权？</button>
+    <button onclick="ask(6)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">入境需要准备什么？</button>
+    <button onclick="ask(7)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">结婚需要什么材料？</button>
+    <button onclick="ask(8)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">怎么交社保？</button>
+    <button onclick="ask(9)" class="quick-btn px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-full hover:bg-blue-100 transition">租房要注意什么？</button>
+  </div>
+</div>
+
+<!-- 输入区 -->
+<div class="bg-white border-t border-gray-200 px-4 py-3 shrink-0">
+  <div class="flex gap-2">
+    <input type="text" id="userInput" placeholder="输入你的法律问题..." 
+      class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      onkeypress="if(event.key==='Enter')sendQuestion()">
+    <button onclick="sendQuestion()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">发送</button>
+  </div>
+  <p class="text-xs text-gray-400 mt-2 text-center">⚠️ 本服务仅供参考，复杂问题请咨询执业律师</p>
+</div>
+
+<script>
+const faq = [
+  {
+    q: "外国人在中国旅游被强迫购物怎么办？",
+    a: `<p><strong>这是违法的。</strong>根据《中华人民共和国旅游法》第35条，旅行社不得欺骗、强制旅游者购物。你有权当场拒绝任何强制交易。</p>
+
+<p><strong>维权步骤：</strong></p>
+<ol class="list-decimal pl-5 space-y-1 mt-1">
+  <li><strong>当场拒绝并保留证据</strong> — 录像、录音、保留购物小票、行程单</li>
+  <li><strong>拨打12345</strong> — 政务服务热线，或直接找当地文化和旅游主管部门投诉</li>
+  <li><strong>投诉时限</strong> — 旅行结束后<strong>90天内</strong>可投诉</li>
+  <li><strong>处理时间</strong> — 收到投诉后<strong>5个工作日</strong>内决定是否受理，受理后<strong>60天</strong>内调解完</li>
+</ol>
+
+<p><strong>旅行社会面临什么处罚？</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>没收违法所得</li>
+  <li>罚款 <strong>3万至30万元</strong></li>
+  <li>情节严重可<strong>吊销旅行社营业执照</strong></li>
+</ul>
+
+<p class="mt-2"><strong>⚠️ 安全提醒</strong>：如果是正在发生的强迫消费，人身安全第一位。先假意配合脱身，再报警（110）或投诉。保留证据是维权关键。</p>`,
+    source: "《旅游法》第35条、《旅行社条例》、《旅游投诉处理办法》（2026.03.15施行）"
+  },
+  {
+    q: "外国人怎么申请中国工作签证？",
+    a: `<p>外国人申请来华工作，需要取得<strong>两个证件</strong>：</p>
+
+<p><strong>1. 外国人来华工作许可通知</strong>（由雇主向科技局/外专局申请）</p>
+<p><strong>2. Z字签证</strong>（工作签证，持通知到中国驻外使领馆申请）</p>
+
+<p><strong>入境后还需要办理：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>入境后30日内申领<strong>工作许可证</strong></li>
+  <li>持工作许可证到出入境管理部门办理<strong>居留许可</strong>（贴护照上，通常1-5年）</li>
+</ul>
+
+<p><strong>外国人来华工作分为三类：</strong></p>
+<table class="w-full border-collapse border border-gray-300 text-xs mt-2">
+  <tr class="bg-gray-50"><th class="border border-gray-300 px-2 py-1 text-left">类别</th><th class="border border-gray-300 px-2 py-1 text-left">说明</th></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>A类</strong></td><td class="border border-gray-300 px-2 py-1">高端人才（科学家、企业家、专门人才），绿色通道</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>B类</strong></td><td class="border border-gray-300 px-2 py-1">专业人才（专业技术、管理、教学），最常见</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>C类</strong></td><td class="border border-gray-300 px-2 py-1">临时性、季节性岗位，国家严格限制</td></tr>
+</table>
+
+<p class="mt-2"><strong>⚠️ 注意</strong>：持L字（旅游）签证、M字（商务）签证在中国工作是<strong>非法就业</strong>，会被处罚。必须先取得工作许可和居留许可。</p>`,
+    source: "《外国人在中国就业管理规定》、《外国人来华工作分类标准（试行）》"
+  },
+  {
+    q: "五星卡（永久居留身份证）需要什么条件？",
+    a: `<p><strong>五星卡</strong>（中华人民共和国外国人永久居留身份证）是外国人在中国的"绿卡"，法律效力等同于居民身份证，可用于金融、教育、医疗、购房、证券开户、社保、诉讼等全场景。</p>
+
+<p><strong>主要申请条件（满足其一即可）：</strong></p>
+<ol class="list-decimal pl-5 space-y-1.5 mt-1">
+  <li><strong>投资类</strong>：在中国投资实际出资额≥200万美元（鼓励类产业≥50万美元），连续3年投资稳定且纳税记录良好</li>
+  <li><strong>任职类</strong>：担任副总经理、副厂长等以上职务或具有副教授、副研究员等以上职称，连续任职满4年，4年内在中国居留累计≥3年</li>
+  <li><strong>特殊贡献/国家需要</strong>：对中国有重大、突出贡献或国家特别需要的人员</li>
+  <li><strong>亲属团聚</strong>：配偶是中国公民/已获得永久居留资格的外国人，婚姻关系存续满5年且在中国居留满5年（每年≥9个月）</li>
+  <li><strong>亲子团聚</strong>：未满18周岁未婚子女投靠父母</li>
+  <li><strong>老人投靠</strong>：60周岁以上，在境外无直系亲属，投靠境内直系亲属</li>
+</ol>
+
+<p><strong>⚠️ 注意</strong>：申请五星卡<strong>不保证获批</strong>，审批由公安部/地方出入境管理部门决定。建议提前咨询专业移民律师或出入境管理部门。</p>`,
+    source: "《外国人永久居留身份证签发管理办法》、《外国人在中国永久居留审批管理办法》"
+  },
+  {
+    q: "外国人在中国创业开公司需要什么手续？",
+    a: `<p>外国人在中国创业，最常见的主体是<strong>外商独资企业（WFOE）</strong>，全部资本由外国投资者投资。</p>
+
+<p><strong>设立流程：</strong></p>
+<ol class="list-decimal pl-5 space-y-1.5 mt-1">
+  <li><strong>名称预先核准</strong> — 向市场监督管理局申请企业名称</li>
+  <li><strong>商务备案</strong> — 通过外商投资信息报告制度在线备案（《外商投资法》实施后大幅简化）</li>
+  <li><strong>工商登记</strong> — 提交公司章程、投资者身份证明、住所证明等材料，领取营业执照</li>
+  <li><strong>刻章备案</strong> — 公章、财务章、合同章、法人章</li>
+  <li><strong>银行开户</strong> — 基本户（人民币）+ 外币资本金账户</li>
+  <li><strong>税务登记</strong> — 领取税务UKey，确定税种和申报方式</li>
+  <li><strong>社保/公积金开户</strong> — 如需聘用中国员工</li>
+</ol>
+
+<p><strong>《外商投资法》核心变化：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>取消逐案审批制，改为<strong>信息报告制</strong></li>
+  <li>实行<strong>准入前国民待遇+负面清单</strong>管理</li>
+  <li>负面清单外的领域，内外资同等对待</li>
+</ul>
+
+<p><strong>⚠️ 注意</strong>：部分行业（教育、医疗、金融等）仍有限制，需先查《外商投资准入特别管理措施（负面清单）》确认是否允许外资进入。</p>`,
+    source: "《中华人民共和国外商投资法》及其实施条例、《外商投资准入特别管理措施（负面清单）》"
+  },
+  {
+    q: "外国人在中国发生交通事故怎么办？",
+    a: `<p><strong>第一步：保护现场，救助伤员</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>立即停车，开启危险报警闪光灯</li>
+  <li>有人员伤亡，立即拨打 <strong>120</strong>（急救）和 <strong>122</strong>（交警）</li>
+  <li>切勿逃逸，逃逸会加重法律责任</li>
+</ul>
+
+<p><strong>第二步：报警并等待交警</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>拨打 <strong>122</strong> 交通事故报警电话</li>
+  <li>交警会出具《道路交通事故认定书》，划分责任</li>
+  <li>外国人不懂中文可要求翻译协助</li>
+</ul>
+
+<p><strong>第三步：保险理赔</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>中国实行<strong>交强险强制制度</strong>，事故先由交强险赔付</li>
+  <li>超出部分按责任比例由商业险或个人承担</li>
+  <li>保存好医疗费票据、修车发票等</li>
+</ul>
+
+<p><strong>⚠️ 特别注意</strong>：</p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>如果你是外国人且无证驾驶，可能面临行政处罚甚至刑事责任</li>
+  <li>如果事故构成犯罪（如交通肇事致人死亡且负主要责任），可能被追究刑事责任并影响在华居留资格</li>
+  <li>涉及民事赔偿时，建议寻求专业律师帮助</li>
+</ul>`,
+    source: "《道路交通安全法》、《道路交通事故处理程序规定》"
+  },
+  {
+    q: "外国人在中国被欠薪怎么办？",
+    a: `<p>外国人在中国工作，与中国劳动者一样受《劳动合同法》保护，被拖欠工资可以依法维权。</p>
+
+<p><strong>维权步骤：</strong></p>
+<ol class="list-decimal pl-5 space-y-1.5 mt-1">
+  <li><strong>与用人单位协商</strong> — 要求支付拖欠工资，保留书面或聊天记录证据</li>
+  <li><strong>向劳动监察部门投诉</strong> — 拨打 <strong>12333</strong> 人力资源和社会保障服务热线，或到当地劳动监察大队投诉</li>
+  <li><strong>申请劳动仲裁</strong> — 向劳动合同履行地或用人单位所在地的<strong>劳动人事争议仲裁委员会</strong>申请仲裁（<strong>免费</strong>）</li>
+  <li><strong>向法院起诉</strong> — 对仲裁结果不服，可在收到仲裁裁决书15日内向法院起诉</li>
+</ol>
+
+<p><strong>需要准备的材料：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>劳动合同</li>
+  <li>工资条/银行流水</li>
+  <li>工作记录（考勤、工作成果等）</li>
+  <li>欠薪证据（催款记录、公司承诺等）</li>
+</ul>
+
+<p><strong>⚠️ 注意</strong>：</p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>劳动仲裁时效为<strong>1年</strong>，从知道或应当知道权利被侵害之日起算</li>
+  <li>如果用人单位已倒闭或老板跑路，可向法院申请<strong>支付令</strong>或<strong>破产清算</strong></li>
+  <li>持工作许可证的外国人享有与中国劳动者同等的劳动保护权利</li>
+</ul>`,
+    source: "《劳动合同法》、《劳动争议调解仲裁法》"
+  },
+  {
+    q: "外国人入境中国需要准备什么？",
+    a: `<p><strong>基本入境要求：</strong></p>
+<ol class="list-decimal pl-5 space-y-1.5 mt-1">
+  <li><strong>有效护照</strong> — 有效期不少于6个月</li>
+  <li><strong>有效中国签证</strong> — 根据入境目的申请对应类型：</li>
+</ol>
+
+<table class="w-full border-collapse border border-gray-300 text-xs mt-2">
+  <tr class="bg-gray-50"><th class="border border-gray-300 px-2 py-1 text-left">签证类型</th><th class="border border-gray-300 px-2 py-1 text-left">适用场景</th></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>L字</strong></td><td class="border border-gray-300 px-2 py-1">旅游、探亲</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>M字</strong></td><td class="border border-gray-300 px-2 py-1">商务活动</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>Z字</strong></td><td class="border border-gray-300 px-2 py-1">工作</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>F字</strong></td><td class="border border-gray-300 px-2 py-1">交流、访问、考察</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>X1/X2</strong></td><td class="border border-gray-300 px-2 py-1">长期/短期学习</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>R字</strong></td><td class="border border-gray-300 px-2 py-1">高端人才（人才签证）</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1"><strong>S1/S2</strong></td><td class="border border-gray-300 px-2 py-1">探亲（私人事务）</td></tr>
+</table>
+
+<p class="mt-2"><strong>入境后注意事项：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>入境后<strong>24小时内</strong>到住宿地派出所或旅馆办理住宿登记</li>
+  <li>如果住酒店，酒店会自动登记；住民宿/朋友家，需自己去派出所登记</li>
+  <li>签证停留期从入境次日零时起算，<strong>逾期停留</strong>会被罚款甚至拘留</li>
+</ul>
+
+<p><strong>免签政策（部分国家）：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>部分国家公民可免签入境15天（具体名单以国家移民管理局公布为准）</li>
+  <li>海南自贸港对59国人员实施30天免签</li>
+  <li>上海邮轮口岸对特定国家实施15天免签</li>
+</ul>`,
+    source: "《出境入境管理法》、国家移民管理局免签政策公告"
+  },
+  {
+    q: "外国人在中国结婚需要什么材料？",
+    a: `<p>涉外婚姻在中国登记，适用《婚姻登记条例》和涉外婚姻特别规定。</p>
+
+<p><strong>登记机关：</strong>男女双方一方户口所在地的<strong>民政局婚姻登记处</strong>（涉外婚姻登记通常由市级民政局办理）</p>
+
+<p><strong>外国人需要准备的材料：</strong></p>
+<ol class="list-decimal pl-5 space-y-1.5 mt-1">
+  <li><strong>有效护照</strong>或其他有效国际旅行证件</li>
+  <li><strong>单身证明</strong>（无配偶证明）：
+    <ul class="list-disc pl-4 space-y-0.5 mt-1">
+      <li>由所在国公证机关出具</li>
+      <li>经中国驻该国使领馆认证</li>
+      <li>或该国驻华使领馆出具</li>
+    </ul>
+  </li>
+  <li><strong>翻译件</strong>：所有外文文件需翻译成中文，翻译件需加盖翻译机构公章</li>
+  <li><strong>3张2寸双方近期半身免冠合影照片</strong></li>
+</ol>
+
+<p><strong>中国公民需要准备的材料：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>身份证、户口簿</li>
+</ul>
+
+<p><strong>⚠️ 注意：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>单身证明有效期通常为6个月，需在有效期内使用</li>
+  <li>部分国家（如美国）不统一出具单身证明，可改用<strong>宣誓书/声明书</strong>，经公证后使用</li>
+  <li>建议提前电话确认当地民政局涉外婚姻登记的具体要求，各地可能略有差异</li>
+</ul>`,
+    source: "《婚姻登记条例》、《民法典》婚姻家庭编"
+  },
+  {
+    q: "外国人在中国怎么交社保？",
+    a: `<p>根据《社会保险法》和《在中国境内就业的外国人参加社会保险暂行办法》，在中国境内合法就业的外国人应当参加社会保险。</p>
+
+<p><strong>参保范围：</strong></p>
+<table class="w-full border-collapse border border-gray-300 text-xs mt-2">
+  <tr class="bg-gray-50"><th class="border border-gray-300 px-2 py-1 text-left">险种</th><th class="border border-gray-300 px-2 py-1 text-left">是否强制</th><th class="border border-gray-300 px-2 py-1 text-left">说明</th></tr>
+  <tr><td class="border border-gray-300 px-2 py-1">养老保险</td><td class="border border-gray-300 px-2 py-1"><strong>强制</strong></td><td class="border border-gray-300 px-2 py-1">累计缴满15年，退休后可领养老金</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1">医疗保险</td><td class="border border-gray-300 px-2 py-1"><strong>强制</strong></td><td class="border border-gray-300 px-2 py-1">看病报销，断缴次月失效</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1">工伤保险</td><td class="border border-gray-300 px-2 py-1"><strong>强制</strong></td><td class="border border-gray-300 px-2 py-1">工作中受伤由基金赔付</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1">失业保险</td><td class="border border-gray-300 px-2 py-1"><strong>强制</strong></td><td class="border border-gray-300 px-2 py-1">非自愿失业可领失业金</td></tr>
+  <tr><td class="border border-gray-300 px-2 py-1">生育保险</td><td class="border border-gray-300 px-2 py-1">已并入医保</td><td class="border border-gray-300 px-2 py-1">生育医疗费用由医保报销</td></tr>
+</table>
+
+<p class="mt-2"><strong>怎么交：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>由<strong>用人单位代扣代缴</strong>（和个人所得税一样）</li>
+  <li>个人缴费比例：养老保险8%、医疗保险2%、失业保险0.5%（各地略有差异）</li>
+  <li>外国人持<strong>五星卡</strong>可直接办理社保卡，享受同等医疗待遇</li>
+</ul>
+
+<p><strong>⚠️ 注意：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>如果与中国有社保互免协议的国家公民（如德国、韩国、日本、荷兰等），可凭参保证明<strong>申请免缴部分险种</strong></li>
+  <li>离境时，个人账户中的养老保险余额可以<strong>一次性提取</strong></li>
+  <li>非法就业的外国人不受社保保护，雇主也不承担缴费义务</li>
+</ul>`,
+    source: "《社会保险法》、《在中国境内就业的外国人参加社会保险暂行办法》"
+  },
+  {
+    q: "外国人在中国租房要注意什么？",
+    a: `<p>外国人在中国租房，除了常规租房注意事项，还需要关注特殊的登记义务和法律风险。</p>
+
+<p><strong>签约前必查：</strong></p>
+<ol class="list-decimal pl-5 space-y-1.5 mt-1">
+  <li><strong>房东身份</strong> — 要求看房产证或购房合同，确认对方有权出租</li>
+  <li><strong>房屋性质</strong> — 确认不是违章建筑、小产权房（无法备案）</li>
+  <li><strong>租赁备案</strong> — 正规住宅应能在住建局办理租赁备案（部分城市要求）</li>
+</ol>
+
+<p><strong>合同必备条款：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>租金、押金金额及支付方式（押一付三最常见）</li>
+  <li>租赁期限及续租/提前解约条件</li>
+  <li>物业费、取暖费、网络费由谁承担</li>
+  <li>房屋维修责任归属</li>
+  <li>外国人入住后房东配合办理<strong>住宿登记</strong>的义务</li>
+</ul>
+
+<p><strong>⚠️ 最重要的法律义务 — 住宿登记：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>根据《出境入境管理法》第39条，外国人在中国境内旅馆以外住宿，需在入住后<strong>24小时内</strong>到居住地派出所办理登记</li>
+  <li>住酒店：酒店自动登记</li>
+  <li>租房/住朋友家：由本人或房东/留宿人到派出所登记，需提供护照、租赁合同</li>
+  <li><strong>逾期不登记</strong>：给予警告，可并处2000元以下罚款</li>
+</ul>
+
+<p><strong>纠纷处理：</strong></p>
+<ul class="list-disc pl-5 space-y-1 mt-1">
+  <li>押金退还纠纷：先协商 → 向居委会/街道办调解 → 向法院起诉</li>
+  <li>房东无故涨租/驱逐：保存合同和转账记录，向法院起诉违约</li>
+  <li>合同到期前房东强行收房：要求赔偿违约金（通常为1-2个月租金）</li>
+</ul>`,
+    source: "《民法典》合同编、《出境入境管理法》第39条、《旅馆业治安管理办法》"
+  }
+];
+
+const chatBox = document.getElementById('chatBox');
+const userInput = document.getElementById('userInput');
+const quickQuestions = document.getElementById('quickQuestions');
+
+function ask(index) {
+  const item = faq[index];
+  addUserMessage(item.q);
+  showTyping(() => {
+    addAiMessage(item.a, item.source);
+  });
+}
+
+function sendQuestion() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  
+  addUserMessage(text);
+  userInput.value = '';
+  
+  // 关键词匹配
+  const matched = matchQuestion(text);
+  if (matched !== -1) {
+    showTyping(() => {
+      addAiMessage(faq[matched].a, faq[matched].source);
+    });
+  } else {
+    showTyping(() => {
+      addAiMessage(
+        `<p>抱歉，我暂时没有关于这个问题的详细回答。</p>
+         <p>你可以尝试点击下方常见问题，或前往<a href="index.html" class="text-blue-600 underline">知识库</a>浏览全部22个主题、140个法规文件。</p>
+         <p>如果你的问题比较复杂，建议咨询专业执业律师。</p>`,
+        "知识库检索"
+      );
+    });
+  }
+}
+
+function matchQuestion(text) {
+  const keywords = [
+    ['购物', '强迫', '旅游', '投诉', '旅行社', '导游'],
+    ['工作签证', '工作许可', 'Z字', '来华工作', '就业许可'],
+    ['五星卡', '永久居留', '绿卡', '永居', '永久居住'],
+    ['创业', '开公司', 'WFOE', '外商投资', '企业设立', '注册公司'],
+    ['交通事故', '车祸', '撞车', '交警', '122'],
+    ['欠薪', '拖欠工资', '劳动仲裁', '12333', '不发工资'],
+    ['入境', '签证', '免签', '护照', '来中国', 'L字', 'M字'],
+    ['结婚', '婚姻', '涉外婚姻', '登记', '单身证明'],
+    ['社保', '社会保险', '养老保险', '医疗保险', '五险一金'],
+    ['租房', '住房', '房东', '住宿登记', '租赁合同']
+  ];
+  
+  text = text.toLowerCase();
+  let bestMatch = -1;
+  let bestScore = 0;
+  
+  for (let i = 0; i < keywords.length; i++) {
+    let score = 0;
+    for (let kw of keywords[i]) {
+      if (text.includes(kw)) score++;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = i;
+    }
+  }
+  return bestMatch;
+}
+
+function addUserMessage(text) {
+  const div = document.createElement('div');
+  div.className = 'flex gap-3 justify-end fade-in';
+  div.innerHTML = `
+    <div class="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm max-w-[85%] text-sm leading-relaxed">${escapeHtml(text)}</div>
+    <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">你</div>
+  `;
+  chatBox.appendChild(div);
+  scrollToBottom();
+}
+
+function showTyping(callback) {
+  const div = document.createElement('div');
+  div.className = 'flex gap-3 fade-in';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">W</div>
+    <div class="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+      <div class="flex gap-1">
+        <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+        <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+        <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+      </div>
+    </div>
+  `;
+  chatBox.appendChild(div);
+  scrollToBottom();
+  
+  setTimeout(() => {
+    const typing = document.getElementById('typing');
+    if (typing) typing.remove();
+    callback();
+  }, 1500 + Math.random() * 1000);
+}
+
+function addAiMessage(html, source) {
+  const div = document.createElement('div');
+  div.className = 'flex gap-3 fade-in';
+  div.innerHTML = `
+    <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-400 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">W</div>
+    <div class="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm max-w-[85%] text-sm leading-relaxed text-gray-700">
+      ${html}
+      <div class="source-tag">📚 来源：${escapeHtml(source)}</div>
+    </div>
+  `;
+  chatBox.appendChild(div);
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+</script>
+
+</body>
+</html>
